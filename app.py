@@ -5,10 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 import io
-from config.config_loader import Config
-from config.processor import DataProcessor
-from config.model_service import ModelService
-from config.visualizer import Visualizer
+from config import Config, DataProcessor, ModelService, Visualizer
 
 def main():
     # 1. Cargar Configuración (antes de set_page_config para obtener el nombre del archivo)

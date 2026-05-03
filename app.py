@@ -8,6 +8,7 @@ import io
 from config.config_loader import Config
 from config.processor import DataProcessor
 from config.model_service import ModelService
+from config.visualizer import Visualizer
 
 def main():
     # 1. Cargar Configuración (antes de set_page_config para obtener el nombre del archivo)
@@ -138,6 +139,16 @@ def main():
                     # Ordenamos de mayor a menor correlación para identificar las variables más influyentes
                     target_corr = corr_matrix[target_display_name].drop(target_display_name).sort_values(ascending=False)
                     st.bar_chart(target_corr)
+
+            # --- Gráfico de Dispersión Genérico (Personalizado) ---
+            with st.expander("🎯 Dispersión Personalizada (Generic Method)"):
+                st.write("Genera el gráfico de dispersión exacto definido en el requerimiento.")
+                c1, c2 = st.columns(2)
+                with c1: gx = st.selectbox("Variable X", X.columns, key="gen_x")
+                with c2: gy = st.selectbox("Variable Y", X.columns, key="gen_y", index=min(1, len(X.columns)-1))
+                
+                fig_gen = Visualizer.plot_generic_scatter(processed_df_for_display, gx, gy, target_display_name)
+                st.pyplot(fig_gen)
 
             # --- Análisis de Relación entre Variables (Scatter & KDE) ---
             with st.expander("📈 Relación entre Variables"):

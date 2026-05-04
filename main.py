@@ -20,7 +20,7 @@ def main():
     # Obtener configuración (cacheadat)
     config = get_config()
     
-    st.title("🧠 Panel de Control de Deep Learning")
+    st.title("Sistema de Gestión Deep Learning")
     st.sidebar.header("Menú de Configuración")
 
     model_config = config.get("model", {})
@@ -39,8 +39,8 @@ def main():
         st.info(f"**Modelo:** {model_config.get('type')}")
         st.info(f"**Dataset:** {config.get('dataset', {}).get('path')}")
     
-    if st.button("🚀 Iniciar Entrenamiento"):
-        st.success(f"Entrenamiento iniciado con LR={lr}, Batch={batch_size}, Epochs={epochs}")
+    if st.button("Ejecutar Proceso"):
+        st.success(f"Parámetros registrados: LR={lr}, Batch={batch_size}, Epochs={epochs}")
 
 if __name__ == "__main__":
     main()

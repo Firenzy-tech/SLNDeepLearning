@@ -2,6 +2,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import plotly.express as px
+import plotly.graph_objects as go
 
 class Visualizer:
     @staticmethod
@@ -17,6 +19,34 @@ class Visualizer:
         ax.set_title(f'Relación: {x_col} y {y_col}')
         plt.tight_layout()
         
+        return fig
+
+    @staticmethod
+    def plot_interactive_loss(history):
+        """Genera un gráfico de pérdida interactivo con Plotly."""
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(y=history.history['loss'], name='Train Loss', mode='lines+markers'))
+        fig.add_trace(go.Scatter(y=history.history['val_loss'], name='Val Loss', mode='lines+markers'))
+        fig.update_layout(
+            title='Curva de Aprendizaje (Pérdida)',
+            xaxis_title='Épocas',
+            yaxis_title='Loss',
+            template='plotly_white',
+            hovermode='x unified'
+        )
+        return fig
+
+    @staticmethod
+    def plot_interactive_corr(df):
+        """Genera un mapa de calor interactivo con Plotly."""
+        corr = df.corr()
+        fig = px.imshow(
+            corr, 
+            text_auto='.2f', 
+            aspect="auto", 
+            color_continuous_scale='RdBu_r',
+            title="Matriz de Correlación Interactiva"
+        )
         return fig
 
     @staticmethod

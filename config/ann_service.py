@@ -74,14 +74,15 @@ class GenericClassifier:
         self.model = model
         return self.model
 
-    def train(self, epochs=100, batch_size=10):
+    def train(self, epochs=100, batch_size=10, callbacks=None):
         if self.model is None: self.build_model()
         self.history = self.model.fit(
             self.X_train, self.y_train,
             validation_split=0.2,
             epochs=epochs,
             batch_size=batch_size,
-            verbose=0
+            verbose=0,
+            callbacks=callbacks
         )
         return self.history
 

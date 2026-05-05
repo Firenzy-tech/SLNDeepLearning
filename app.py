@@ -50,32 +50,31 @@ def main():
     st.set_page_config(page_title="Analizador de Datos y Clasificador", layout="wide")
     st.title("DeepInsight Analytics Engine")
     
-    # Columna izquierda: carga de archivo. Columna derecha: modo de prueba.
-    col1, col2 = st.columns([2, 1])
+    # Carga de archivo principal.
+    col1 = st.container()
     
     with col1:
         st.subheader("Carga de Dataset")
         uploaded_file = st.file_uploader("Seleccione o arrastre un archivo CSV", type=["csv"], key="csv_uploader")
-    
-    with col2:
-        st.subheader("Configuración")
-        use_sample = st.checkbox("Usar datos de prueba", value=False, help="Carga el dataset de prueba incluido")
 
+    use_sample = False
+    
+ 
     # 3) Carga del dataset, ya sea desde el archivo subido o desde la ruta
     # configurada como ejemplo.
-    df = None
+    loaded_dataset = None
     doc_name = "Analizador ML"
     
     if uploaded_file is not None:
         try:
-            df = pd.read_csv(uploaded_file)
+            loaded_dataset = pd.read_csv(uploaded_file)
             doc_name = uploaded_file.name
             st.success(f"✅ Archivo cargado: {doc_name}")
         except Exception as e:
             st.error(f"❌ Error al cargar el archivo: {e}")
     elif use_sample and data_path and os.path.exists(data_path):
         try:
-            df = pd.read_csv(data_path)
+            loaded_dataset = pd.read_csv(data_path)
             doc_name = os.path.basename(data_path)
             st.info(f"📦 Usando dataset de prueba: {doc_name}")
         except Exception as e:
@@ -91,7 +90,7 @@ def main():
         - Datos limpios: Sistema aplicará imputación automática
         """)
 
-    if df is not None:
+    if loaded_dataset is not None:
         # El dataset ya esta disponible; el resto de la pantalla se habilita.
         st.caption(f"Archivo en análisis: {doc_name}")
         st.divider()
@@ -115,7 +114,7 @@ def main():
         # La aplicacion esta pensada para clasificacion binaria; por eso se deja
         # elegir la columna objetivo y luego se valida que existan exactamente dos clases.
         st.sidebar.header("Parámetros del Modelo")
-        all_columns = df.columns.tolist()
+        all_columns = loaded_dataset.columns.tolist()
 
         
         # Intentar preseleccionar la columna definida en appsettings.json.
@@ -151,7 +150,7 @@ def main():
         # 5) Preprocesamiento: imputacion, codificacion y separacion X/y.
         processor = DataProcessor()
         try:
-            X, y, label_encoder = processor.clean_data(df, target_col, selected_features)
+            X, y, label_encoder = processor.clean_data(loaded_dataset, target_col, selected_features)
 
             unique_target_values = pd.Series(y).dropna().unique()
             if len(unique_target_values) != 2:
@@ -175,24 +174,25 @@ def main():
 
             with tab_explore:
                 kpi1, kpi2, kpi3 = st.columns(3)
-                kpi1.metric("Total Registros", df.shape[0])
+                kpi1.metric("Total Registros", loaded_dataset.shape[0])
                 kpi2.metric("Features Detectadas", len(selected_features))
-                kpi3.metric("Valores Nulos", df.isnull().sum().sum(), delta_color="inverse")
+                kpi3.metric("Valores Nulos", loaded_dataset.isnull().sum().sum(), delta_color="inverse")
                 
                 st.divider()
                 col_data1, col_data2 = st.columns(2)
                 with col_data1:
                     st.markdown("### Previsualización de Datos")
-                    st.dataframe(df.head(10), use_container_width=True)
+                    st.markdown("Primeros 10 registros del dataset original. El preprocesamiento se muestra en la pestaña de Análisis Visual.")
+                    st.dataframe(loaded_dataset.head(10), use_container_width=True)
                 with col_data2:
                     st.markdown("### Análisis de Valores Nulos")
-                    null_df = df.isnull().sum().reset_index()
+                    null_df = loaded_dataset.isnull().sum().reset_index()
                     null_df.columns = ['Feature', 'Count']
                     st.plotly_chart(px.bar(null_df, x='Feature', y='Count', color='Count', height=300), use_container_width=True)
 
                 st.subheader("ℹ️ Información Técnica")
                 buffer = io.StringIO()
-                df.info(buf=buffer)
+                loaded_dataset.info(buf=buffer)
                 st.text(buffer.getvalue())
 
                 st.subheader("Vista Previa de Datos Procesados")
@@ -231,7 +231,7 @@ def main():
                         
                         # GenericClassifier encapsula preprocesamiento, arquitectura ANN,
                         # entrenamiento, evaluacion y exportacion del artefacto.
-                        clf = GenericClassifier(df, target_col, selected_features, hidden_layers, dropout, l2_val)
+                        clf = GenericClassifier(loaded_dataset, target_col, selected_features, hidden_layers, dropout, l2_val)
                         clf.preprocess_data()
                         clf.build_model(learning_rate=learning_rate)
                         

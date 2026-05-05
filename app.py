@@ -1,5 +1,16 @@
+"""Aplicacion principal de Streamlit para explorar datos y entrenar un clasificador ANN.
+
+Este archivo actua como orquestador de la experiencia de usuario:
+- carga configuracion y dataset
+- prepara datos para analisis y entrenamiento
+- renderiza exploracion visual
+- ejecuta entrenamiento, evaluacion y exportacion del modelo
+"""
+
 import streamlit as st
 import pandas as pd
+import zipfile
+import tempfile
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')  # Backend para Streamlit
@@ -12,8 +23,9 @@ import tensorflow as tf
 from config import Config, DataProcessor, Visualizer
 from config.ann_service import GenericClassifier
 
-# Callback para sincronizar el entrenamiento de Keras con la barra de progreso de Streamlit
 class StreamlitProgressCallback(tf.keras.callbacks.Callback):
+    """Actualiza la barra de progreso de Streamlit al final de cada epoca."""
+
     def __init__(self, epochs, progress_bar, status_text):
         self.epochs = epochs
         self.progress_bar = progress_bar
@@ -25,17 +37,20 @@ class StreamlitProgressCallback(tf.keras.callbacks.Callback):
         self.status_text.text(f"Entrenamiento en curso: Época {epoch + 1}/{self.epochs} - Loss: {logs['loss']:.4f}")
 
 def main():
-    # 1. Cargar Configuración
+    """Construye la interfaz y coordina el flujo completo de la aplicacion."""
+
+    # 1) Cargar configuracion base. Estos valores vienen de config/appsettings.json
+    # y permiten reutilizar el panel con datasets distintos sin tocar el codigo.
     config = Config()
     data_path = config.get("data_path")
     target_col_default = config.get("target_column")
     model_params = config.get("model_params", {})
 
-    # --- Interfaz de Carga de Datos ---
+    # 2) Composicion de la UI principal.
     st.set_page_config(page_title="Analizador de Datos y Clasificador", layout="wide")
     st.title("DeepInsight Analytics Engine")
     
-    # Crear columnas para opciones de carga
+    # Columna izquierda: carga de archivo. Columna derecha: modo de prueba.
     col1, col2 = st.columns([2, 1])
     
     with col1:
@@ -46,7 +61,8 @@ def main():
         st.subheader("Configuración")
         use_sample = st.checkbox("Usar datos de prueba", value=False, help="Carga el dataset de prueba incluido")
 
-    # 2. Carga de Datos
+    # 3) Carga del dataset, ya sea desde el archivo subido o desde la ruta
+    # configurada como ejemplo.
     df = None
     doc_name = "Analizador ML"
     
@@ -76,11 +92,11 @@ def main():
         """)
 
     if df is not None:
-        # Mostrar nombre del archivo/dataset
+        # El dataset ya esta disponible; el resto de la pantalla se habilita.
         st.caption(f"Archivo en análisis: {doc_name}")
         st.divider()
         
-        # --- Opciones de Carga en Sidebar ---
+        # 4) Sidebar: todas las opciones que afectan al preprocesamiento y al modelo.
         st.sidebar.header("Gestión de Datos")
         st.sidebar.info(f"✅ Archivo cargado: {doc_name}")
         
@@ -96,19 +112,20 @@ def main():
         
         st.sidebar.divider()
         
-        # --- Configuración dinámica del Target ---
+        # La aplicacion esta pensada para clasificacion binaria; por eso se deja
+        # elegir la columna objetivo y luego se valida que existan exactamente dos clases.
         st.sidebar.header("Parámetros del Modelo")
         all_columns = df.columns.tolist()
 
         
-        # Intentar pre-seleccionar la columna del JSON si existe en el CSV
+        # Intentar preseleccionar la columna definida en appsettings.json.
         default_idx = all_columns.index(target_col_default) if target_col_default in all_columns else 0
         
         target_col = st.sidebar.selectbox("Variable Objetivo (Target)", options=all_columns, index=default_idx)
 
         st.sidebar.caption("Este panel entrena un clasificador binario. El objetivo debe tener 2 clases.")
 
-        # 2. Selección de Features (Cualquier CSV)
+        # El usuario decide que columnas usan la red como features.
         available_features = [c for c in all_columns if c != target_col]
         selected_features = st.sidebar.multiselect(
             "Variables de Entrada (Features)",
@@ -117,7 +134,7 @@ def main():
             help="Elimina columnas que sean IDs, nombres o fechas para mejores resultados."
         )
 
-        # --- Parámetros de la Red Neuronal ---
+        # Parametros del clasificador ANN. Se exponen en la UI para iterar rapido.
         st.sidebar.subheader("🧠 Arquitectura ANN")
         layers_input = st.sidebar.text_input("Capas Ocultas (neuronas)", value="16, 8, 20")
         hidden_layers = [int(x.strip()) for x in layers_input.split(",")]
@@ -131,7 +148,7 @@ def main():
             st.warning("Selecciona al menos una feature para poder entrenar el modelo.")
             return
 
-        # 3. Procesamiento
+        # 5) Preprocesamiento: imputacion, codificacion y separacion X/y.
         processor = DataProcessor()
         try:
             X, y, label_encoder = processor.clean_data(df, target_col, selected_features)
@@ -148,11 +165,12 @@ def main():
             processed_df_for_display = X.copy()
             processed_df_for_display[target_display_name] = y
             
-            # Almacenar en session_state antes de las pestañas para que sea global
+            # Guardar resultados intermedios en session_state para reutilizarlos
+            # desde distintas pestañas sin recalcular todo el pipeline.
             st.session_state['X_processed'] = X
             st.session_state['y_processed'] = y
 
-            # --- PANEL DE CONTROL DINÁMICO USANDO TABS ---
+            # 6) Secciones principales del flujo: exploracion, analisis y entrenamiento.
             tab_explore, tab_viz, tab_train = st.tabs(["Exploración", "Análisis Visual", "Entrenamiento"])
 
             with tab_explore:
@@ -184,12 +202,12 @@ def main():
                 st.markdown("### Matriz de Correlaciones")
                 st.plotly_chart(Visualizer.plot_interactive_corr(processed_df_for_display), use_container_width=True)
 
-                # --- Gráfico de Dispersión Genérico (Personalizado) ---
+                # Explorador rapido de relaciones entre dos variables numericas.
                 st.markdown("### Explorador de Variables")
                 c1, c2 = st.columns(2)
                 with c1: gx = st.selectbox("Variable X", X.columns, key="gen_x")
                 
-                # Evitar seleccionar el mismo eje o índice inválido
+                # Evitar seleccionar el mismo eje y mostrar una combinacion util.
                 gen_y_idx = min(1, len(X.columns)-1) if len(X.columns) > 1 else 0
                 available_for_gy = [col for col in X.columns if col != gx]
                 if available_for_gy:
@@ -203,6 +221,7 @@ def main():
                     st.plotly_chart(fig_px, use_container_width=True)
 
             with tab_train:
+                # 7) Entrenamiento del modelo y persistencia de sus artefactos.
                 st.markdown("### Centro de Entrenamiento")
                 col_train, col_pred = st.columns([2, 1])
                 with col_train:
@@ -210,6 +229,8 @@ def main():
                         progress_bar = st.progress(0)
                         status_text = st.empty()
                         
+                        # GenericClassifier encapsula preprocesamiento, arquitectura ANN,
+                        # entrenamiento, evaluacion y exportacion del artefacto.
                         clf = GenericClassifier(df, target_col, selected_features, hidden_layers, dropout, l2_val)
                         clf.preprocess_data()
                         clf.build_model(learning_rate=learning_rate)
@@ -220,7 +241,7 @@ def main():
                         st.session_state['cm'], st.session_state['report'], st.session_state['y_preds_test'] = clf.evaluate()
                         st.success("Ciclo de entrenamiento finalizado.")
 
-                    # Persistencia de resultados: se muestran si existen en el estado de la sesión
+                    # Si ya hay entrenamiento previo, se reutilizan los resultados guardados.
                     if 'clf' in st.session_state and 'history' in st.session_state:
                         clf_trained = st.session_state['clf']
                         st.plotly_chart(Visualizer.plot_interactive_loss(st.session_state['history']), use_container_width=True)
@@ -237,9 +258,37 @@ def main():
                         st.pyplot(fig_cm)
                         plt.close(fig_cm)
 
-                        if st.button("Exportar Modelo Entrenado"):
-                            clf_trained.save_assets("ann_classifier_output")
-                            st.success("Activos exportados al directorio local.")
+                      
+                        st.divider()
+                        if st.button("📦 Preparar Descarga del Modelo", use_container_width=True):
+                            try:
+                                with tempfile.TemporaryDirectory() as tmpdir:
+                                    # Se generan los activos dentro de una carpeta temporal
+                                    # para luego empaquetarlos en un ZIP en memoria.
+                                    base_path = os.path.join(tmpdir, "ann_classifier_output")
+                                    clf_trained.save_assets(base_path)
+                                    
+                                    # El ZIP se arma en memoria para evitar archivos intermedios.
+                                    zip_buffer = io.BytesIO()
+                                    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+                                        for root, _, files in os.walk(tmpdir):
+                                            for file in files:
+                                                zf.write(os.path.join(root, file), arcname=file)
+                                    
+                                    st.session_state['download_zip'] = zip_buffer.getvalue()
+                                    st.success("✅ Modelo empaquetado y listo para descargar.")
+                            except Exception as e:
+                                st.error(f"Error al preparar la exportación: {e}")
+
+                        if 'download_zip' in st.session_state:
+                            st.download_button(
+                                label="📥 Descargar Activos (.zip)",
+                                data=st.session_state['download_zip'],
+                                file_name="modelo_entrenado.zip",
+                                mime="application/zip",
+                                use_container_width=True
+                            )
+           
 
                 with col_pred:
                     st.subheader("Inferencia Predictiva")

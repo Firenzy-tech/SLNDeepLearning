@@ -1,6 +1,10 @@
 # SLNDeepLearning
 
-Este proyecto proporciona una infraestructura base para experimentos de Deep Learning y Machine Learning, integrando un sistema de configuración centralizado y una interfaz gráfica interactiva.
+Este proyecto proporciona una infraestructura base para experimentos de Deep Learning y Machine Learning, integrando un sistema de configuración centralizado, una interfaz gráfica interactiva y un clasificador neuronal configurable.
+
+## Documentación Rápida
+
+Si quieres entender el flujo sin leer primero el código, empieza por [GUIA_ARQUITECTURA.md](GUIA_ARQUITECTURA.md). Ahí se resume la entrada principal, el preprocesamiento, el entrenamiento y la exportación del modelo.
 
 ## Requisitos Previos
 
@@ -38,14 +42,22 @@ Para mantener un entorno limpio y evitar conflictos de librerías, se recomienda
 
 ## Ejecución
 
-El proyecto utiliza **Streamlit** para la interfaz gráfica. Para iniciar el panel de control, ejecuta el siguiente comando desde la raíz del proyecto:
+El proyecto utiliza **Streamlit** para la interfaz gráfica. Para iniciar el panel de control, ejecuta desde la raíz del proyecto:
 
 ```bash
-streamlit run main.py
+streamlit run app.py
 ```
 
-Una vez ejecutado, el sistema abrirá automáticamente una ventana en tu navegador predeterminado (normalmente en `http://localhost:8501`) donde podrás ajustar los hiperparámetros e iniciar el entrenamiento.
+El navegador se abrirá automáticamente en `http://localhost:8501` donde podrás cargar datos, explorarlos, entrenar el modelo y descargar los artefactos.
 
 ## Configuración de Hiperparámetros
 
 Puedes modificar los valores por defecto editando el archivo `config/appsettings.json`. El cargador de configuración (`config_loader.py`) leerá automáticamente estos cambios al iniciar la aplicación.
+
+## Componentes Principales
+
+- **`app.py`** — Entrypoint único; orquesta la UI y el flujo de entrenamiento
+- **`config/processor.py`** — Limpieza, imputación y codificación de datos
+- **`config/ann_service.py`** — Red neuronal: preproceso, construcción, entrenamiento y evaluación
+- **`config/visualizer.py`** — Gráficos e iteractivos
+- **`config/config_loader.py`** — Lee `config/appsettings.json`

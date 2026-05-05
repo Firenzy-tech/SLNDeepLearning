@@ -1,3 +1,13 @@
+"""Servicio de clasificacion neuronal para el flujo principal de la app.
+
+La clase `GenericClassifier` concentra todo el pipeline de ML:
+- limpia y prepara los datos
+- separa train/test y escala features
+- construye la ANN configurable
+- entrena y evalua el modelo
+- exporta modelo + artefactos auxiliares
+"""
+
 import pandas as pd
 import numpy as np
 import pickle
@@ -12,7 +22,8 @@ from tensorflow.keras.regularizers import l2
 
 class GenericClassifier:
     def __init__(self, df, target_column, feature_columns, hidden_layers=[16, 8, 20], dropout_rate=0.2, l2_reg=0.001):
-        """Clasificador dinámico basado en ANN."""
+        """Inicializa el clasificador y los transformadores auxiliares."""
+
         self.df = df.copy()
         self.target_column = target_column
         self.feature_columns = feature_columns
@@ -29,16 +40,20 @@ class GenericClassifier:
         self.X_train, self.X_test, self.y_train, self.y_test = None, None, None, None
 
     def preprocess_data(self, test_size=0.2):
-        """Implementa pasos automáticos de limpieza y escalado."""
+        """Aplica limpieza, codificacion, particion y escalado.
+
+        Devuelve el listado final de columnas resultantes tras el one-hot encoding.
+        """
+
         df_clean = self.df.dropna(subset=[self.target_column])
         X = df_clean[self.feature_columns].copy()
         y = df_clean[self.target_column].copy()
 
-        # Codificación del Target
+        # Si el target viene como texto, lo pasamos a etiquetas numericas.
         if y.dtype == 'object' or y.dtype == 'category':
             y = self.label_encoder.fit_transform(y)
 
-        # Imputación Automática
+        # Imputacion automatica para no depender de limpieza previa perfecta.
         num_cols = X.select_dtypes(include=['number']).columns
         cat_cols = X.select_dtypes(include=['object', 'category']).columns
         if len(num_cols) > 0:
@@ -47,7 +62,7 @@ class GenericClassifier:
             X[cat_cols] = self.imputer_cat.fit_transform(X[cat_cols])
             X = pd.get_dummies(X, columns=cat_cols, drop_first=True)
 
-        # División y Escalado
+        # Division train/test y escalado para estabilizar el entrenamiento de la red.
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
             X, y, test_size=test_size, random_state=42
         )
@@ -58,7 +73,8 @@ class GenericClassifier:
         return X.columns.tolist()
 
     def build_model(self, learning_rate=0.001):
-        """Construye arquitectura flexible basada en parámetros."""
+        """Construye la ANN con las capas ocultas definidas por el usuario."""
+
         model = Sequential()
         model.add(Input(shape=(self.input_dim,)))
         for units in self.hidden_layers:
@@ -75,6 +91,8 @@ class GenericClassifier:
         return self.model
 
     def train(self, epochs=100, batch_size=10, callbacks=None):
+        """Entrena el modelo usando una validacion interna sobre el train set."""
+
         if self.model is None: self.build_model()
         self.history = self.model.fit(
             self.X_train, self.y_train,
@@ -87,7 +105,8 @@ class GenericClassifier:
         return self.history
 
     def evaluate(self):
-        """Genera métricas automáticas."""
+        """Calcula predicciones, confusion matrix y classification report."""
+
         y_prob = self.model.predict(self.X_test, verbose=0)
         y_pred = (y_prob > 0.5).astype(int).flatten()
         cm = confusion_matrix(self.y_test, y_pred)
@@ -95,7 +114,8 @@ class GenericClassifier:
         return cm, report, y_pred
 
     def save_assets(self, filename='ann_model'):
-        """Exporta modelo y escalador."""
+        """Exporta modelo, escalador y metadatos de features a disco."""
+
         self.model.save(f"{filename}.keras")
         assets = {
             'scaler': self.scaler,

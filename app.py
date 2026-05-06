@@ -5,6 +5,7 @@ from pathlib import Path
 # Carga variables de entorno desde .env (para API Key de Groq, etc.)
 try:
     from dotenv import load_dotenv
+
     env_path = Path(__file__).parent / ".env"
     load_dotenv(env_path)
 except ImportError:
@@ -15,28 +16,31 @@ st.set_page_config(
     page_title="Plataforma de Data Science & ML",
     page_icon="🧠",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
 from components.ui_helpers import setup_branding
+
 setup_branding(
     page_title="Plataforma Integrada de Data Science & ML",
-    page_subtitle="Panel ejecutivo para exploración, limpieza y machine learning"
+    page_subtitle="Panel ejecutivo para exploración, limpieza y machine learning",
 )
 
 # Inicialización del estado global de la sesión
-if 'raw_data' not in st.session_state:
-    st.session_state['raw_data'] = None
-if 'clean_data' not in st.session_state:
-    st.session_state['clean_data'] = None
+if "raw_data" not in st.session_state:
+    st.session_state["raw_data"] = None
+if "clean_data" not in st.session_state:
+    st.session_state["clean_data"] = None
 
 # Página de inicio
 st.title("Plataforma Integrada de Data Science & ML")
 
-st.markdown("""
+st.markdown(
+    """
 Bienvenido a la plataforma empresarial de análisis de datos y machine learning. 
 Tenemos dos flujos de trabajo disponibles optimizados para diferentes necesidades:
-""")
+"""
+)
 
 st.divider()
 
@@ -44,7 +48,8 @@ st.divider()
 col1, col2 = st.columns(2)
 
 with col1:
-    st.markdown("""
+    st.markdown(
+        """
     ### Proceso Base
     Análisis paso a paso con control total sobre cada etapa:
     - **Carga y Perfilado**: Importa y explora tu dataset
@@ -53,12 +58,14 @@ with col1:
     - **Machine Learning**: Entrena modelos tradicionales
     
     **Ideal para:** Análisis exploratorio, limpieza manual y modelos clásicos.
-    """)
+    """
+    )
     if st.button("Iniciar Pipeline Estándar", use_container_width=True, type="primary"):
         st.switch_page("pages/1_Carga_y_Perfilado.py")
 
 with col2:
-    st.markdown("""
+    st.markdown(
+        """
     ### Análisis Avanzado
     Plataforma completa con visualización interactiva y Deep Learning:
     -  Carga rápida de datos
@@ -67,14 +74,16 @@ with col2:
     -  Predicciones en tiempo real
     
     **Ideal para:** Análisis rápido, Deep Learning y visualización avanzada.
-    """)
+    """
+    )
     if st.button("Iniciar Análisis Avanzado", use_container_width=True, type="primary"):
         st.switch_page("pages/5_Advanced_Analysis.py")
 
 st.divider()
 
 # Información de ayuda
-st.markdown("""
+st.markdown(
+    """
 ## Guía Rápida
 
 ### Pipeline Estándar (izquierda)
@@ -106,10 +115,11 @@ Si encuentras errores de importación, asegúrate de:
 1. Tener todas las dependencias instaladas
 2. Estar en la carpeta raíz del proyecto
 3. Ejecutar con: `streamlit run app.py`
-""")
+"""
+)
 
 # Información del sistema (estilizado)
-sidebar_info_html = '''
+sidebar_info_html = """
 <div role="region" aria-label="Información del sistema" style="padding:14px; border-radius:12px; background: linear-gradient(180deg, rgba(2,31,89,0.08), rgba(2,40,115,0.06)); border:1px solid rgba(255,255,255,0.04);">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
         <div>
@@ -130,6 +140,6 @@ sidebar_info_html = '''
     </div>
     <div style="margin-top:10px;font-size:12px;color:rgba(245,248,252,0.7);">Última actualización: Mayo 2026</div>
 </div>
-'''
+"""
 
 st.sidebar.markdown(sidebar_info_html, unsafe_allow_html=True)

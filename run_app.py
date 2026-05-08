@@ -17,6 +17,8 @@ if __name__ == "__main__":
         "run",
         resolve_path("app.py"),
         "--global.developmentMode=false",
+        "--server.headless=true",
+        "--server.runOnSave=false"
     ]
     
     # Ejecutamos el CLI de Streamlit.

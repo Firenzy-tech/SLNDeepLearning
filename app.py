@@ -49,6 +49,7 @@ def main():
     # 2) Composicion de la UI principal.
     st.set_page_config(page_title="Analizador de Datos y Clasificador", layout="wide")
     st.title("DeepInsight Analytics Engine")
+    st.sidebar.divider()
     
     # Carga de archivo principal.
     col1 = st.container()
@@ -99,6 +100,7 @@ def main():
         st.sidebar.header("Gestión de Datos")
         st.sidebar.info(f"Archivo cargado: {doc_name}")
         
+        # Botones para reiniciar el proceso sin recargar la pagina. Limpian el session_state y vuelven a renderizar.
         col_btn1, col_btn2 = st.sidebar.columns(2)
         with col_btn1:
             if st.button("Cargar Otro Archivo"):
@@ -160,16 +162,23 @@ def main():
                     "Selecciona una columna categórica/binaria, por ejemplo 'Rain'."
                 )
 
-            target_display_name = f"{target_col}_encoded"
+            # Preparar dataframe para visualización con etiquetas legibles
+            target_display_name = f"{target_col} (Objetivo)"
             processed_df_for_display = X.copy()
-            processed_df_for_display[target_display_name] = y
+            if label_encoder:
+                processed_df_for_display[target_display_name] = label_encoder.inverse_transform(y)
+            else:
+                processed_df_for_display[target_display_name] = y.astype(str)
             
-            # Guardar resultados intermedios en session_state para reutilizarlos
-            # desde distintas pestañas sin recalcular todo el pipeline.
-            st.session_state['X_processed'] = X
-            st.session_state['y_processed'] = y
+            # Creamos también un dataframe con datos originales + target formateado para los inspectores visuales
+            raw_viz_df = loaded_dataset.copy()
+            raw_viz_df[target_display_name] = processed_df_for_display[target_display_name]
 
-            # 6) Secciones principales del flujo: exploracion, analisis y entrenamiento.
+            # Guardar en session_state
+            st.session_state['processed_viz_df'] = processed_df_for_display
+            st.session_state['raw_viz_df'] = raw_viz_df
+
+            # 6) Secciones principales del flujo
             tab_explore, tab_viz, tab_train = st.tabs(["Exploración", "Análisis Visual", "Entrenamiento"])
 
             with tab_explore:
@@ -182,43 +191,81 @@ def main():
                 col_data1, col_data2 = st.columns(2)
                 with col_data1:
                     st.markdown("### Previsualización de Datos")
-                    st.markdown("Primeros 10 registros del dataset original. El preprocesamiento se muestra en la pestaña de Análisis Visual.")
                     st.dataframe(loaded_dataset.head(10), use_container_width=True)
                 with col_data2:
-                    st.markdown("### Análisis de Valores Nulos")
+                    st.markdown("### Calidad de Datos (Nulos)")
                     null_df = loaded_dataset.isnull().sum().reset_index()
                     null_df.columns = ['Feature', 'Count']
                     st.plotly_chart(px.bar(null_df, x='Feature', y='Count', color='Count', height=300), use_container_width=True)
 
-                st.subheader("ℹ️ Información Técnica")
-                buffer = io.StringIO()
-                loaded_dataset.info(buf=buffer)
-                st.text(buffer.getvalue())
-
-                st.subheader("Vista Previa de Datos Procesados")
-                st.dataframe(processed_df_for_display.head())
+                st.subheader("Estadísticas Generales")
+                df_numeric = loaded_dataset.select_dtypes(include=[np.number])
+                if not df_numeric.empty:
+                    st.dataframe(df_numeric.describe().T, use_container_width=True)
 
             with tab_viz:
-                st.markdown("### Matriz de Correlaciones")
-                st.plotly_chart(Visualizer.plot_interactive_corr(processed_df_for_display), use_container_width=True)
+                processed_viz_df = st.session_state['processed_viz_df']
+                raw_viz_df = st.session_state['raw_viz_df']
+                
+                with st.expander("Análisis Global de Correlaciones", expanded=True):
+                    st.plotly_chart(Visualizer.plot_interactive_corr(processed_viz_df), use_container_width=True)
 
-                # Explorador rapido de relaciones entre dos variables numericas.
-                st.markdown("### Explorador de Variables")
-                c1, c2 = st.columns(2)
-                with c1: gx = st.selectbox("Variable X", X.columns, key="gen_x")
+                st.divider()
                 
-                # Evitar seleccionar el mismo eje y mostrar una combinacion util.
-                gen_y_idx = min(1, len(X.columns)-1) if len(X.columns) > 1 else 0
-                available_for_gy = [col for col in X.columns if col != gx]
-                if available_for_gy:
-                    with c2: gy = st.selectbox("Variable Y", available_for_gy, key="gen_y")
-                else:
-                    with c2: gy = gx
+                st.subheader("Análisis Detallado por Variable")
+                col_sel1, col_sel2 = st.columns([2, 1])
+                with col_sel1:
+                    selected_col = st.selectbox("Seleccione una variable para inspeccionar:", options=selected_features)
                 
-                if gx != gy:
-                    fig_px = px.scatter(processed_df_for_display, x=gx, y=gy, color=target_display_name, 
-                                      template="plotly_white", marginal_x="box", marginal_y="violin")
-                    st.plotly_chart(fig_px, use_container_width=True)
+                if selected_col:
+                    is_numeric = np.issubdtype(loaded_dataset[selected_col].dtype, np.number)
+                    
+                    v_col1, v_col2 = st.columns([2, 1])
+                    
+                    with v_col1:
+                        if is_numeric:
+                            # Histograma comparativo por clase
+                            fig_hist = px.histogram(
+                                raw_viz_df, x=selected_col, color=target_display_name,
+                                marginal="box", barmode="overlay",
+                                title=f"Distribución de {selected_col} por Clase",
+                                template="plotly_white"
+                            )
+                            st.plotly_chart(fig_hist, use_container_width=True)
+                        else:
+                            # Gráfico de barras comparativo
+                            fig_bar = px.histogram(
+                                raw_viz_df, x=selected_col, color=target_display_name,
+                                barmode="group", title=f"Frecuencia de {selected_col} por Clase",
+                                template="plotly_white"
+                            )
+                            st.plotly_chart(fig_bar, use_container_width=True)
+                    
+                    with v_col2:
+                        if is_numeric:
+                            # Boxplot para ver separación de medias
+                            fig_box = px.box(
+                                raw_viz_df, x=target_display_name, y=selected_col, color=target_display_name,
+                                title="Separación de Clases", template="plotly_white"
+                            )
+                            st.plotly_chart(fig_box, use_container_width=True)
+                        else:
+                            st.info("Variable categórica detectada. Revise el gráfico de barras para analizar la proporción de clases.")
+
+                st.divider()
+                
+                with st.expander("Explorador de Relaciones Bivariadas"):
+                    c1, c2 = st.columns(2)
+                    with c1: gx = st.selectbox("Eje X", selected_features, key="viz_x")
+                    with c2: gy = st.selectbox("Eje Y", [c for c in selected_features if c != gx], key="viz_y")
+                    
+                    fig_rel = px.scatter(
+                        raw_viz_df, x=gx, y=gy, color=target_display_name,
+                        trendline="ols" if np.issubdtype(raw_viz_df[gx].dtype, np.number) and np.issubdtype(raw_viz_df[gy].dtype, np.number) else None,
+                        title=f"Relación: {gx} vs {gy}",
+                        template="plotly_white", marginal_x="violin"
+                    )
+                    st.plotly_chart(fig_rel, use_container_width=True)
 
             with tab_train:
                 # 7) Entrenamiento del modelo y persistencia de sus artefactos.

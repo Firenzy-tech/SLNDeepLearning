@@ -97,15 +97,15 @@ def main():
         
         # 4) Sidebar: todas las opciones que afectan al preprocesamiento y al modelo.
         st.sidebar.header("Gestión de Datos")
-        st.sidebar.info(f"✅ Archivo cargado: {doc_name}")
+        st.sidebar.info(f"Archivo cargado: {doc_name}")
         
         col_btn1, col_btn2 = st.sidebar.columns(2)
         with col_btn1:
-            if st.button("🔄 Cargar Otro Archivo"):
+            if st.button("Cargar Otro Archivo"):
                 st.session_state.clear()
                 st.rerun()
         with col_btn2:
-            if st.button("🏠 Volver al Inicio"):
+            if st.button("Volver al Inicio"):
                 st.session_state.clear()
                 st.rerun()
         

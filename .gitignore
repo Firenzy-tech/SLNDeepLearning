@@ -243,3 +243,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# datasets
+datasets/
+
+# Cursor config files
+.cursor/
+/.cursor-runs/
+/cursor-local.json

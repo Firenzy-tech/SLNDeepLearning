@@ -3,7 +3,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import streamlit as st
-from services.data_manager import load_data, get_profile_stats
+from services.data_manager import load_data, get_profile_stats, get_data_types_with_recommendations
 from components.ui_helpers import render_kpi_card, show_spinner
 
 st.header("1. Carga de Archivos y Perfilado")
@@ -29,5 +29,23 @@ if uploaded_file is not None:
     st.subheader("Vista Previa")
     st.dataframe(df.head(10), use_container_width=True)
     
-    st.subheader("Tipos de Datos")
-    st.write(df.dtypes.astype(str).to_dict())
+    st.subheader("📊 Análisis de Tipos de Datos y Recomendaciones")
+    st.markdown("""
+    Tabla con análisis automático de cada columna, incluyendo tipo de dato, cantidad de valores nulos 
+    y recomendaciones de limpieza según estándares de ciencia de datos.
+    """)
+    
+    data_types_df = get_data_types_with_recommendations(df)
+    st.dataframe(data_types_df, use_container_width=True, hide_index=True)
+    
+    # Resumen de alertas
+    st.divider()
+    st.subheader("⚠️ Alertas y Acciones Recomendadas")
+    
+    cols_with_nulls = data_types_df[data_types_df["❌ Nulos"] > 0]
+    if len(cols_with_nulls) > 0:
+        st.warning(f"🔴 {len(cols_with_nulls)} columna(s) con valores nulos detectadas")
+        for idx, row in cols_with_nulls.iterrows():
+            st.write(f"  • **{row['📋 Campo']}**: {row['❌ Nulos']} nulos ({row['% Nulos']}) - {row['💡 Recomendación']}")
+    else:
+        st.success("✅ No se detectaron valores nulos")

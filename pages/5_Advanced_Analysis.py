@@ -24,6 +24,7 @@ import io
 import plotly.express as px
 import tensorflow as tf
 from config import Config, DataProcessor, Visualizer, GenericClassifier
+from utils.groq_diagnostic import GroqDiagnostician
 
 
 class StreamlitProgressCallback(tf.keras.callbacks.Callback):
@@ -337,6 +338,61 @@ def main():
                         except Exception as e:
                             st.warning(f"No se pudo generar matriz de confusión: {e}")
 
+                        st.divider()
+                        
+                        # 🆕 SECCIÓN: Diagnóstico del Modelo (Lenguaje No Técnico)
+                        with st.expander("🔍 Diagnóstico del Modelo (Explicación Clara)", expanded=False):
+                            st.markdown("""
+                            **¿Cómo funciona mi modelo?** Dejaremos que una IA te explique los resultados 
+                            de forma fácil de entender, sin tecnicismos.
+                            """)
+                            
+                            if 'report' not in st.session_state:
+                                st.warning("⚠️ Primero entrena el modelo para generar métricas. Haz clic en 'Iniciar Entrenamiento'.")
+                            else:
+                                if st.button("📊 Generar Diagnóstico", use_container_width=True):
+                                    with st.spinner("Analizando resultados del modelo..."):
+                                        try:
+                                            # Extrae métricas del reporte
+                                            report = st.session_state['report']
+                                            metrics = {
+                                                'accuracy': report.get('accuracy', 0),
+                                                'precision': report.get('weighted avg', {}).get('precision', 0),
+                                                'recall': report.get('weighted avg', {}).get('recall', 0),
+                                                'f1_score': report.get('weighted avg', {}).get('f1-score', 0),
+                                            }
+
+                                            # Inicializa Groq y genera diagnóstico
+                                            diagnostician = GroqDiagnostician()
+                                            diagnostic = diagnostician.generate_diagnostic(
+                                                metrics=metrics,
+                                                model_name=f"Clasificador ANN - {doc_name}"
+                                            )
+
+                                            st.session_state['diagnostic'] = diagnostic
+
+                                        except ValueError as e:
+                                            st.warning(f"⚙️ {str(e)}")
+                                            st.info(
+                                                """
+                                                **Para usar esta función:**
+                                                1. Crea una API Key en [Groq Console](https://console.groq.com)
+                                                2. En tu terminal, ejecuta:
+                                                   ```bash
+                                                   setx GROQ_API_KEY "tu_token_aqui"
+                                                   ```
+                                                3. Reinicia Streamlit: `streamlit run app.py`
+                                                """
+                                            )
+                                        except Exception as e:
+                                            st.error(f"❌ Error al generar diagnóstico: {str(e)}")
+                            
+                        # Mostrar diagnóstico (fuera del expander para garantizar visibilidad)
+                        if 'diagnostic' in st.session_state:
+                            st.markdown("---")
+                            st.markdown("### 📋 Diagnóstico (explicación no técnica):")
+                            st.info(st.session_state['diagnostic'])
+                        
                         st.divider()
                         
                         if st.button(" Preparar Descarga del Modelo", use_container_width=True):

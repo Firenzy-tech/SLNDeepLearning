@@ -1,4 +1,14 @@
 import streamlit as st
+import os
+from pathlib import Path
+
+# Carga variables de entorno desde .env (para API Key de Groq, etc.)
+try:
+    from dotenv import load_dotenv
+    env_path = Path(__file__).parent / ".env"
+    load_dotenv(env_path)
+except ImportError:
+    pass  # Si dotenv no está instalado, continúa sin él
 
 # Configuración global de la página (debe ser la primera llamada a Streamlit)
 st.set_page_config(

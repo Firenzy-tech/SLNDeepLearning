@@ -5,5 +5,8 @@ numpy
 matplotlib
 seaborn
 tensorflow
+protobuf>=6.31.1,<8.0.0
 statsmodels
+requests
+python-dotenv
 

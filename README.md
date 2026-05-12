@@ -48,6 +48,22 @@ El proyecto utiliza **Streamlit** para la interfaz gráfica. Para iniciar el pan
 streamlit run app.py
 ```
 
+## 🆕 Diagnóstico de Modelos con IA
+
+Después de entrenar un modelo, puedes generar un **diagnóstico en lenguaje no técnico** usando Groq API:
+
+- 📊 Explicaciones simples para cualquier persona
+- 🤖 Powered by Groq (IA ultrarrápida)
+- ✅ Sin tecnicismos confusos
+
+**Para usar esta función:**
+1. Obtén una API Key gratis en: https://console.groq.com
+2. Configura tu clave (ver [GUIA_DIAGNOSTICO_IA.md](GUIA_DIAGNOSTICO_IA.md))
+3. Entrena un modelo en "Análisis Avanzado"
+4. Genera el diagnóstico automáticamente
+
+Más detalles en [GUIA_DIAGNOSTICO_IA.md](GUIA_DIAGNOSTICO_IA.md)
+
 El navegador se abrirá automáticamente en `http://localhost:8501` donde podrás cargar datos, explorarlos, entrenar el modelo y descargar los artefactos.
 
 ## Configuración de Hiperparámetros

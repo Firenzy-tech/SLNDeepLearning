@@ -1,9 +1,9 @@
 #Abstracción de Scikit-Learn.
 
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from sklearn.metrics import accuracy_score, classification_report, mean_squared_error
-import pandas as pd
+from sklearn.model_selection import train_test_split  # type: ignore[reportMissingImports]
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor  # type: ignore[reportMissingModuleSource]
+from sklearn.metrics import accuracy_score, classification_report, mean_squared_error  # type: ignore[reportMissingModuleSource]
+import pandas as pd  # type: ignore[reportMissingModuleSource]
 from typing import Dict, Any, Tuple
 
 def run_ml_pipeline(df: pd.DataFrame, target_col: str, task: str) -> Tuple[Any, Dict[str, Any]]:

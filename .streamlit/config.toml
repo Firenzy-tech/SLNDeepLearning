@@ -1,0 +1,2 @@
+[server]
+maxUploadSize = 2048  # MB - aumenta el límite de subida a 2GB

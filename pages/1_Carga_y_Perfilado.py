@@ -10,11 +10,26 @@ st.header("1. Carga de Archivos y Perfilado")
 
 uploaded_file = st.file_uploader("Sube tu dataset (CSV, Excel, JSON)", type=['csv', 'xlsx', 'xls', 'json'])
 
+max_rows = None
+if uploaded_file is not None:
+    # Mover las opciones de control antes de la carga efectiva
+    with st.expander("⚙️ Opciones de Carga Avanzadas", expanded=True):
+        # Por defecto NO limitar filas; el usuario puede activar la limitación si lo desea.
+        limit_rows = st.checkbox("Limitar filas para no saturar la RAM (recomendado)", value=False)
+        if limit_rows:
+            max_rows = st.number_input("Cantidad de filas", min_value=1, value=10000, step=1000)
+
 if uploaded_file is not None:
     with show_spinner("Cargando datos en memoria..."):
-        df = load_data(uploaded_file)
+        # Pasamos un file_id basado en nombre y tamaño para que el caché sea rápido
+        file_id = f"{uploaded_file.name}_{uploaded_file.size}"
+        df = load_data(uploaded_file, max_rows=max_rows, file_id=file_id)
+        
         st.session_state['raw_data'] = df
-        st.session_state['clean_data'] = df.copy() # Inicializa la versión limpia
+        # Optimizamos: No hacemos .copy() inmediatamente si el archivo es grande
+        # Si `clean_data` aún es None, lo inicializamos con los datos cargados
+        if st.session_state.get('clean_data') is None:
+            st.session_state['clean_data'] = df
         
     st.success("¡Datos cargados exitosamente!")
     

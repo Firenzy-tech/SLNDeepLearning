@@ -15,8 +15,14 @@ class DataCleaner:
         elif strategy == "Imputar media":
             for col in columns:
                 if pd.api.types.is_numeric_dtype(df_clean[col]):
-                    df_clean[col].fillna(df_clean[col].mean(), inplace=True)
-        # Aquí se escalarían las demás estrategias (mediana, moda, ffill, bfill)
+                    df_clean[col] = df_clean[col].fillna(df_clean[col].mean())
+        elif strategy == "Imputar mediana":
+            for col in columns:
+                if pd.api.types.is_numeric_dtype(df_clean[col]):
+                    df_clean[col] = df_clean[col].fillna(df_clean[col].median())
+        elif strategy == "Forward fill":
+            df_clean[columns] = df_clean[columns].ffill()
+            
         return df_clean
 
     @staticmethod

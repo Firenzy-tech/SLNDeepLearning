@@ -45,7 +45,11 @@ def main():
     """Construye la interfaz avanzada de análisis y entrenamiento ANN."""
 
     # Configuración de la página
-    st.set_page_config(page_title="Análisis Avanzado", layout="wide")
+    st.set_page_config(page_title="Análisis Avanzado", layout="wide", page_icon="🧠")
+    
+    from components.ui_helpers import setup_branding, show_spinner
+    setup_branding()
+    
     st.header("Análisis Avanzado - Clasificador ANN")
     st.markdown("""
     Plataforma completa para análisis exploratorio, visualización interactiva y entrenamiento 
@@ -351,7 +355,30 @@ def main():
                                 st.warning("⚠️ Primero entrena el modelo para generar métricas. Haz clic en 'Iniciar Entrenamiento'.")
                             else:
                                 if st.button("📊 Generar Diagnóstico", use_container_width=True):
-                                    with st.spinner("Analizando resultados del modelo..."):
+                                    with show_spinner("Generando explicabilidad (SHAP)..."):
+                                        try:
+                                            import shap
+                                            clf_trained = st.session_state['clf']
+                                            shap_values, X_sample, expected_value = clf_trained.explain_model(sample_size=50)
+                                            
+                                            feature_names = clf_trained.processed_features
+                                            mean_abs_shap = np.abs(shap_values).mean(axis=0)
+                                            if mean_abs_shap.ndim > 1:
+                                                mean_abs_shap = mean_abs_shap.flatten()
+                                                
+                                            shap_dict = dict(zip(feature_names, mean_abs_shap))
+                                            shap_sorted = sorted(shap_dict.items(), key=lambda item: item[1], reverse=True)
+                                            top_features_str = ", ".join([f"{k} (impacto: {v:.4f})" for k, v in shap_sorted[:5]])
+                                            
+                                            st.session_state['shap_values'] = shap_values
+                                            st.session_state['shap_X_sample'] = X_sample
+                                            st.session_state['shap_features'] = feature_names
+                                            st.session_state['shap_summary'] = top_features_str
+                                        except Exception as e:
+                                            st.warning(f"No se pudo generar explicabilidad SHAP: {e}")
+                                            st.session_state['shap_summary'] = None
+
+                                    with show_spinner("Analizando resultados con Groq IA..."):
                                         try:
                                             # Extrae métricas del reporte
                                             report = st.session_state['report']
@@ -366,7 +393,8 @@ def main():
                                             diagnostician = GroqDiagnostician()
                                             diagnostic = diagnostician.generate_diagnostic(
                                                 metrics=metrics,
-                                                model_name=f"Clasificador ANN - {doc_name}"
+                                                model_name=f"Clasificador ANN - {doc_name}",
+                                                shap_summary=st.session_state.get('shap_summary')
                                             )
 
                                             st.session_state['diagnostic'] = diagnostic
@@ -387,10 +415,28 @@ def main():
                                         except Exception as e:
                                             st.error(f"❌ Error al generar diagnóstico: {str(e)}")
                             
-                        # Mostrar diagnóstico (fuera del expander para garantizar visibilidad)
+                        # Mostrar SHAP y diagnóstico (fuera del expander para garantizar visibilidad)
+                        if 'shap_values' in st.session_state:
+                            st.markdown("---")
+                            st.markdown("### 🎯 Impacto de las Variables (SHAP)")
+                            st.markdown("Este gráfico muestra cómo cada variable influye en las predicciones. Los valores más a la derecha tienen un impacto positivo fuerte en el resultado.")
+                            try:
+                                import shap
+                                plt.clf()
+                                shap.summary_plot(
+                                    st.session_state['shap_values'], 
+                                    st.session_state['shap_X_sample'], 
+                                    feature_names=st.session_state['shap_features'], 
+                                    show=False
+                                )
+                                st.pyplot(plt.gcf())
+                                plt.clf()
+                            except Exception as e:
+                                st.warning(f"Error al renderizar el gráfico SHAP: {e}")
+
                         if 'diagnostic' in st.session_state:
                             st.markdown("---")
-                            st.markdown("### 📋 Diagnóstico (explicación no técnica):")
+                            st.markdown("### 📋 Diagnóstico (Explicación No Técnica):")
                             st.info(st.session_state['diagnostic'])
                         
                         st.divider()

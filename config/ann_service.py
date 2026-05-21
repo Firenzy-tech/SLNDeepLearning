@@ -38,6 +38,7 @@ class GenericClassifier:
         self.imputer_cat = SimpleImputer(strategy='most_frequent')
         self.history = None
         self.X_train, self.X_test, self.y_train, self.y_test = None, None, None, None
+        self.processed_features = None
 
     def preprocess_data(self, test_size=0.2):
         """Aplica limpieza, codificacion, particion y escalado.
@@ -70,7 +71,8 @@ class GenericClassifier:
         self.X_test = self.scaler.transform(self.X_test)
         
         self.input_dim = self.X_train.shape[1]
-        return X.columns.tolist()
+        self.processed_features = X.columns.tolist()
+        return self.processed_features
 
     def build_model(self, learning_rate=0.001):
         """Construye la ANN con las capas ocultas definidas por el usuario."""
@@ -112,6 +114,30 @@ class GenericClassifier:
         cm = confusion_matrix(self.y_test, y_pred)
         report = classification_report(self.y_test, y_pred, output_dict=True)
         return cm, report, y_pred
+
+    def explain_model(self, sample_size=50):
+        """Calcula los valores SHAP para interpretar el modelo usando KernelExplainer."""
+        import shap
+        
+        if self.X_test is None or len(self.X_test) == 0:
+            raise ValueError("No hay datos de prueba disponibles para generar la explicación SHAP.")
+
+        # Usar kmeans para resumir el background y que KernelExplainer corra rápido
+        background = shap.kmeans(self.X_train, 10)
+        explainer = shap.KernelExplainer(self.model.predict, background)
+        
+        # Explicar un subset del test set para optimizar el rendimiento
+        # Aseguramos no superar el límite del test set
+        actual_size = min(sample_size, len(self.X_test))
+        X_sample = self.X_test[:actual_size]
+        
+        shap_values = explainer.shap_values(X_sample)
+        
+        # En clasificación binaria Keras, shap_values puede venir como una lista de 1 elemento
+        if isinstance(shap_values, list):
+            shap_values = shap_values[0]
+            
+        return shap_values, X_sample, explainer.expected_value
 
     def save_assets(self, filename='ann_model'):
         """Exporta modelo, escalador y metadatos de features a disco."""

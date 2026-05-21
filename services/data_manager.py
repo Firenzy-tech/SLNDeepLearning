@@ -5,6 +5,7 @@ import io
 import numpy as np
 import os
 import csv
+from pandas.api import types as ptypes
 import json
 import ijson
 import duckdb
@@ -112,6 +113,9 @@ def load_data(uploaded_file, max_rows: int = None, file_id: str = "") -> pd.Data
     Optimizamos el hashing para evitar que Streamlit lea el archivo gigante dos veces.
     """
     try:
+        if uploaded_file is None:
+            return pd.DataFrame()
+            
         # Reposicionar el puntero del archivo por si Streamlit lo leyó antes
         uploaded_file.seek(0)
         
@@ -128,12 +132,14 @@ def load_data(uploaded_file, max_rows: int = None, file_id: str = "") -> pd.Data
         try:
             # Para CSV, usamos DuckDB que es mucho más eficiente en memoria
             if suffix == '.csv':
+                # Normalizar ruta para evitar problemas con backslashes en SQL de DuckDB
+                safe_path = tmp_path.replace("\\", "/")
                 if max_rows:
                     # Muestreo aleatorio si el archivo es gigante, o primeras N filas
-                    query = f"SELECT * FROM read_csv_auto('{tmp_path}') LIMIT {max_rows}"
+                    query = f"SELECT * FROM read_csv_auto('{safe_path}') LIMIT {max_rows}"
                     df = duckdb.query(query).to_df()
                 else:
-                    df = duckdb.query(f"SELECT * FROM read_csv_auto('{tmp_path}')").to_df()
+                    df = duckdb.query(f"SELECT * FROM read_csv_auto('{safe_path}')").to_df()
             else:
                 # Para otros formatos, usamos el streaming batch a batch para no saturar
                 reader = UniversalFileReader(chunk_size=5000)
@@ -148,6 +154,8 @@ def load_data(uploaded_file, max_rows: int = None, file_id: str = "") -> pd.Data
                     all_batches.append(batch_df)
                     rows_accumulated += len(batch_df)
                     if max_rows and rows_accumulated >= max_rows: break
+                if not all_batches:
+                    return pd.DataFrame()
                 df = pd.concat(all_batches, ignore_index=True)
 
         finally:
@@ -162,9 +170,6 @@ def optimize_memory(df: pd.DataFrame) -> pd.DataFrame:
     """
     Optimiza el uso de memoria RAM reduciendo la precisión de los tipos de datos.
     """
-    # Use pandas type checks to avoid invalid comparisons (e.g., datetime vs float)
-    from pandas.api import types as ptypes
-
     for col in df.columns:
         try:
             col_series = df[col]
@@ -187,7 +192,7 @@ def optimize_memory(df: pd.DataFrame) -> pd.DataFrame:
             elif ptypes.is_bool_dtype(col_series):
                 df[col] = col_series.astype(np.uint8)
 
-            elif ptypes.is_categorical_dtype(col_series):
+            elif isinstance(col_series.dtype, pd.CategoricalDtype):
                 # already categorical
                 continue
 
@@ -271,6 +276,7 @@ def get_data_types_with_recommendations(df: pd.DataFrame) -> pd.DataFrame:
     """
     total_rows = len(df)
     data_info = []
+    column_headers = ["📋 Campo", "🔢 Tipo", "❌ Nulos", "% Nulos", "💡 Recomendación"]
     
     for col in df.columns:
         null_count = df[col].isnull().sum()
@@ -279,13 +285,11 @@ def get_data_types_with_recommendations(df: pd.DataFrame) -> pd.DataFrame:
         recommendation = get_cleaning_recommendation(dtype, null_count, total_rows, col)
         
         data_info.append({
-            "📋 Campo": col,
-            "🔢 Tipo": dtype,
-            "❌ Nulos": null_count,
-            "% Nulos": f"{null_percentage:.1f}%",
-            "💡 Recomendación": recommendation
+            column_headers[0]: col,
+            column_headers[1]: dtype,
+            column_headers[2]: null_count,
+            column_headers[3]: f"{null_percentage:.1f}%",
+            column_headers[4]: recommendation
         })
     
-    return pd.DataFrame(data_info)
-
-
+    return pd.DataFrame(data_info, columns=column_headers)

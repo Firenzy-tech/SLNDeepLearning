@@ -13,10 +13,13 @@ except ImportError:
 # Configuración global de la página (debe ser la primera llamada a Streamlit)
 st.set_page_config(
     page_title="Plataforma de Data Science & ML",
-    page_icon="",
+    page_icon="🧠",
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+from components.ui_helpers import setup_branding
+setup_branding()
 
 # Inicialización del estado global de la sesión
 if 'raw_data' not in st.session_state:

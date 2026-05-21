@@ -13,3 +13,4 @@ ijson
 duckdb
 openpyxl
 plotly
+shap

@@ -28,7 +28,7 @@ class GroqDiagnostician:
                 "Define la variable de entorno GROQ_API_KEY o pásala como parámetro."
             )
     
-    def generate_diagnostic(self, metrics: Dict[str, Any], model_name: str = "Modelo de Clasificación") -> str:
+    def generate_diagnostic(self, metrics: Dict[str, Any], model_name: str = "Modelo de Clasificación", shap_summary: str = None) -> str:
         """
         Genera un diagnóstico no técnico del modelo basado en sus métricas.
         
@@ -66,15 +66,23 @@ class GroqDiagnostician:
     - Precisión General: {accuracy_pct:.1f}%
     - Precisión: {precision_pct:.1f}%
     - F1-Score: {f1_pct:.1f}%
+    """
+        
+        if shap_summary:
+            prompt += f"""
+    ANÁLISIS DE IMPORTANCIA DE VARIABLES (SHAP):
+    Las variables que más impactan en las predicciones de la Red Neuronal, ordenadas por su impacto absoluto (del más al menos importante), son:
+    {shap_summary}
+    Integra esta información crucial tanto en tu análisis técnico como en tu resumen no técnico.
+    """
 
+        prompt += """
     REQUISITOS:
     usa términos técnicos apropiados y evidencia numérica breve.
     lenguaje claro, una línea de veredicto y una recomendación práctica.
     Mantén cada parte concisa  Usa % cuando sea relevante.
 
     Finalmente evalua retorna cuales son las variables más importantes para el modelo y su impacto en el resultado, basándote en la matriz de confusión y las métricas proporcionadas.  Si no se proporcionan datos de la matriz de confusión, haz una inferencia basada en las métricas disponibles.
-
-    
     """
         
         try:

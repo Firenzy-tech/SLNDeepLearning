@@ -57,10 +57,11 @@ if uploaded_file is not None:
     st.divider()
     st.subheader("⚠️ Alertas y Acciones Recomendadas")
     
-    cols_with_nulls = data_types_df[data_types_df["❌ Nulos"] > 0]
-    if len(cols_with_nulls) > 0:
-        st.warning(f"🔴 {len(cols_with_nulls)} columna(s) con valores nulos detectadas")
-        for idx, row in cols_with_nulls.iterrows():
-            st.write(f"  • **{row['📋 Campo']}**: {row['❌ Nulos']} nulos ({row['% Nulos']}) - {row['💡 Recomendación']}")
-    else:
-        st.success("✅ No se detectaron valores nulos")
+    if not data_types_df.empty and "❌ Nulos" in data_types_df.columns:
+        cols_with_nulls = data_types_df[data_types_df["❌ Nulos"].astype(int) > 0]
+        if len(cols_with_nulls) > 0:
+            st.warning(f"🔴 {len(cols_with_nulls)} columna(s) con valores nulos detectadas")
+            for idx, row in cols_with_nulls.iterrows():
+                st.write(f"  • **{row['📋 Campo']}**: {row['❌ Nulos']} nulos ({row['% Nulos']}) - {row['💡 Recomendación']}")
+        else:
+            st.success("✅ No se detectaron valores nulos")

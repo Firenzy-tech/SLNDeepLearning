@@ -8,6 +8,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from utils.groq_diagnostic import GroqDiagnostician
 from models.ml_engine import run_ml_pipeline
 
 st.header("4. Machine Learning Pipeline")
@@ -58,6 +59,49 @@ if st.session_state.get('clean_data') is not None:
                 else:
                     st.info("⚠️ No se puede graficar la importancia: El modelo tiene dimensiones distintas al dataset original (posiblemente por One-Hot Encoding interno).")
         
+        # Nueva sección: Diagnóstico con IA (Groq)
+        with st.expander("🤖 Diagnóstico con Inteligencia Artificial (Groq)", expanded=False):
+            st.markdown("""
+            Utiliza IA para generar un análisis objetivo y recomendaciones operativas 
+            basadas en el rendimiento actual de tu modelo.
+            """)
+            
+            if st.button("📊 Generar Análisis y Recomendaciones", use_container_width=True):
+                with st.spinner("Consultando con la IA de Groq..."):
+                    try:
+                        metrics = st.session_state['ml_metrics']
+                        # Adaptamos las métricas al formato esperado por GroqDiagnostician
+                        diag_metrics = {
+                            'accuracy': metrics.get('accuracy', 0),
+                            'precision': metrics.get('precision', 0),
+                            'recall': metrics.get('recall', 0),
+                            'f1_score': metrics.get('f1_score', 0)
+                        }
+                        
+                        # Generamos un resumen de importancia de variables para enriquecer el diagnóstico
+                        inf_summary = None
+                        if hasattr(model, 'feature_importances_'):
+                            features = getattr(model, 'feature_names_in_', [c for c in df.columns if c != target])
+                            importances = model.feature_importances_
+                            feat_imp = pd.DataFrame({'Variable': features, 'Importancia': importances}).sort_values(by='Importancia', ascending=False)
+                            top_5 = feat_imp.head(5)
+                            inf_summary = ", ".join([f"{row['Variable']} (impacto: {row['Importancia']:.4f})" for _, row in top_5.iterrows()])
+
+                        diagnostician = GroqDiagnostician()
+                        st.session_state['ml_diagnostic'] = diagnostician.generate_diagnostic(
+                            metrics=diag_metrics,
+                            model_name=f"Random Forest ({tarea})",
+                            shap_summary=inf_summary
+                        )
+                    except ValueError as ve:
+                        st.warning(f"⚠️ {ve}")
+                    except Exception as e:
+                        st.error(f"❌ Error al conectar con Groq: {str(e)}")
+
+            if 'ml_diagnostic' in st.session_state:
+                st.markdown("---")
+                st.info(st.session_state['ml_diagnostic'])
+
         # Preparar el modelo para descarga mediante serialización
         model_buffer = io.BytesIO()
         pickle.dump(st.session_state['ml_model'], model_buffer)

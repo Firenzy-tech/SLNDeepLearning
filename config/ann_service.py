@@ -9,12 +9,17 @@ La clase `GenericClassifier` concentra todo el pipeline de ML:
 """
 
 import pandas as pd
-import numpy as np
 import pickle
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import confusion_matrix, classification_report
+try:
+    import shap
+    SHAP_AVAILABLE = True
+except ImportError:
+    SHAP_AVAILABLE = False
+
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Input, Dropout
@@ -76,7 +81,9 @@ class GenericClassifier:
 
     def build_model(self, learning_rate=0.001):
         """Construye la ANN con las capas ocultas definidas por el usuario."""
-
+        # Asegurarse de que los datos han sido preprocesados antes de construir
+        if not hasattr(self, 'input_dim') or self.input_dim is None:
+            raise ValueError("Ejecuta `preprocess_data()` antes de construir el modelo; no hay `input_dim` definido.")
         model = Sequential()
         model.add(Input(shape=(self.input_dim,)))
         for units in self.hidden_layers:
@@ -94,8 +101,12 @@ class GenericClassifier:
 
     def train(self, epochs=100, batch_size=10, callbacks=None):
         """Entrena el modelo usando una validacion interna sobre el train set."""
+        # Requerir preprocesado previo para evitar errores silenciosos
+        if self.X_train is None:
+            raise ValueError("Los datos no han sido preprocesados. Ejecuta `preprocess_data()` antes de entrenar.")
 
-        if self.model is None: self.build_model()
+        if self.model is None:
+            self.build_model()
         self.history = self.model.fit(
             self.X_train, self.y_train,
             validation_split=0.2,
@@ -109,6 +120,9 @@ class GenericClassifier:
     def evaluate(self):
         """Calcula predicciones, confusion matrix y classification report."""
 
+        if self.model is None:
+            raise ValueError("El modelo no ha sido entrenado aún.")
+
         y_prob = self.model.predict(self.X_test, verbose=0)
         y_pred = (y_prob > 0.5).astype(int).flatten()
         cm = confusion_matrix(self.y_test, y_pred)
@@ -117,13 +131,18 @@ class GenericClassifier:
 
     def explain_model(self, sample_size=50):
         """Calcula los valores SHAP para interpretar el modelo usando KernelExplainer."""
-        import shap
-        
+        if not SHAP_AVAILABLE:
+            raise ImportError("La librería 'shap' no está instalada. Ejecuta 'pip install shap' para usar esta función.")
+
+        if self.model is None:
+            raise ValueError("El modelo debe estar entrenado antes de generar la explicación SHAP.")
+
         if self.X_test is None or len(self.X_test) == 0:
             raise ValueError("No hay datos de prueba disponibles para generar la explicación SHAP.")
 
         # Usar kmeans para resumir el background y que KernelExplainer corra rápido
-        background = shap.kmeans(self.X_train, 10)
+        n_clusters = min(10, len(self.X_train))
+        background = shap.kmeans(self.X_train, n_clusters)
         explainer = shap.KernelExplainer(self.model.predict, background)
         
         # Explicar un subset del test set para optimizar el rendimiento
@@ -142,11 +161,17 @@ class GenericClassifier:
     def save_assets(self, filename='ann_model'):
         """Exporta modelo, escalador y metadatos de features a disco."""
 
+        if self.model is None:
+            raise ValueError("El modelo no ha sido construido ni entrenado aún.")
+
+        if self.processed_features is None:
+            raise ValueError("Los datos no han sido preprocesados aún.")
+
         self.model.save(f"{filename}.keras")
         assets = {
             'scaler': self.scaler,
             'label_encoder': self.label_encoder,
-            'features': self.feature_columns
+            'features': self.processed_features # Guardar las features procesadas (incluyendo one-hot encoding)
         }
         with open(f"{filename}_assets.pkl", 'wb') as f:
             pickle.dump(assets, f)

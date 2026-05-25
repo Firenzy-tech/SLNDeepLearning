@@ -14,3 +14,4 @@ duckdb
 openpyxl
 plotly
 shap
+ijson

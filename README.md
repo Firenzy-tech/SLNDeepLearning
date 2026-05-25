@@ -8,7 +8,7 @@ Si quieres entender el flujo sin leer primero el código, empieza por [GUIA_ARQU
 
 ## Requisitos Previos
 
-- Python 3.8 o superior.
+- Python 3.11.
 - Pip (gestor de paquetes de Python).
 
 ## Instalación y Configuración

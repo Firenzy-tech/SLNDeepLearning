@@ -40,7 +40,7 @@ if uploaded_file is not None:
         df = load_data(uploaded_file, max_rows=max_rows, file_id=file_id)
         
         st.session_state['raw_data'] = df
-        # Optimizamos: No hacemos .copy() inmediatamente si el archivo es grande
+        #Optimizamos: No hacemos .copy() inmediatamente si el archivo es grande
         # Si `clean_data` aún es None, lo inicializamos con los datos cargados
         if st.session_state.get('clean_data') is None:
             st.session_state['clean_data'] = df

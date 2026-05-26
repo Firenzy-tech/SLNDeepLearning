@@ -1,0 +1,18 @@
+{
+    "version": "0.2",
+    "language": "en,es",
+    "dictionaries": [
+        "en",
+        "en-US",
+        "es",
+        "es-ES",
+        "spanish"
+    ],
+    "words": [
+        "boxplot",
+        "detectaron",
+        "Groq",
+        "GROQ",
+        "lineplot"
+    ]
+}

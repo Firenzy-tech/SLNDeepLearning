@@ -41,7 +41,7 @@ if st.session_state.get('clean_data') is not None:
 
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Distribuciones", "Correlaciones", "Relacional", "Categórica", "Scatter avanzado", "Ejemplos Seaborn"])
 
-    # Debug opcional para ver estado de la sesión y estructura del dataframe
+    # Debug opcional para ver estado de la sesión y estructura Del dataframe
     with st.expander("🔍 Debug (mostrar estado y estructura)", expanded=False):
         st.write("`st.session_state` keys:", list(st.session_state.keys()))
         st.write("Columnas:", df.columns.tolist())

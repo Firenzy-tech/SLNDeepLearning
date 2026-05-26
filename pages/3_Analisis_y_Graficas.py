@@ -169,7 +169,6 @@ if st.session_state.get('clean_data') is not None:
         ])
 
         with example_tab1:
-            st.caption("Basado en el ejemplo de series temporales con hue y style.")
             cols_num = df.select_dtypes(include=['number']).columns.tolist()
             cols_cat = df.select_dtypes(exclude=['number']).columns.tolist()
 
@@ -197,7 +196,6 @@ if st.session_state.get('clean_data') is not None:
                     st.error(f"Error al generar el lineplot: {e}")
 
         with example_tab2:
-            st.caption("Basado en el ejemplo de histogramas facetados con `displot`.")
             cols_num = df.select_dtypes(include=['number']).columns.tolist()
             cols_cat = df.select_dtypes(exclude=['number']).columns.tolist()
 
@@ -222,7 +220,6 @@ if st.session_state.get('clean_data') is not None:
                     st.error(f"Error al generar los histogramas facetados: {e}")
 
         with example_tab3:
-            st.caption("Basado en el ejemplo de `relplot(kind='line')` con facetas.")
             cols_num = df.select_dtypes(include=['number']).columns.tolist()
             cols_cat = df.select_dtypes(exclude=['number']).columns.tolist()
 
@@ -250,7 +247,6 @@ if st.session_state.get('clean_data') is not None:
                     st.error(f"Error al generar el lineplot facetado: {e}")
 
         with example_tab4:
-            st.caption("Basado en el ejemplo de boxplot agrupado.")
             cols_num = df.select_dtypes(include=['number']).columns.tolist()
             cols_cat = df.select_dtypes(exclude=['number']).columns.tolist()
 
@@ -273,7 +269,6 @@ if st.session_state.get('clean_data') is not None:
                     st.error(f"Error al generar el boxplot: {e}")
 
         with example_tab5:
-            st.caption("Basado en el ejemplo de matriz de correlación diagonal.")
             try:
                 fig_example = plot_diagonal_correlation_matrix(df)
                 st.pyplot(fig_example)
@@ -281,7 +276,6 @@ if st.session_state.get('clean_data') is not None:
                 st.error(f"Error al generar la matriz de correlación diagonal: {e}")
 
         with example_tab6:
-            st.caption("Basado en el ejemplo de barplot horizontal.")
             cols_num = df.select_dtypes(include=['number']).columns.tolist()
             cols_cat = df.select_dtypes(exclude=['number']).columns.tolist()
 

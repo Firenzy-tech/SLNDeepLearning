@@ -19,6 +19,21 @@ from charts.visualizer import (
     plot_horizontal_barplot,
 )
 
+st.set_page_config(
+    page_title="Análisis y Gráficas",
+    page_icon="🧠",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+from components.ui_helpers import setup_branding
+
+setup_branding(
+    page_title="Análisis y Gráficas",
+    page_subtitle="Visualización estadística con lectura clara y profesional",
+    show_logo=True,
+)
+
 st.header("3. Visualización y Análisis Estadístico")
 
 if st.session_state.get('clean_data') is not None:

@@ -4,7 +4,21 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 import streamlit as st
 from services.data_manager import load_data, get_profile_stats, get_data_types_with_recommendations
-from components.ui_helpers import render_kpi_card, show_spinner
+
+st.set_page_config(
+    page_title="Carga y Perfilado",
+    page_icon="🧠",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+from components.ui_helpers import render_kpi_card, show_spinner, setup_branding
+
+setup_branding(
+    page_title="Carga y Perfilado",
+    page_subtitle="Ingesta de datos y diagnóstico inicial de calidad",
+    show_logo=True,
+)
 
 st.header("1. Carga de Archivos y Perfilado")
 

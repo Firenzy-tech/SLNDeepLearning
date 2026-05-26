@@ -12,6 +12,21 @@ except Exception as _e:
     CLEANER_AVAILABLE = False
     CLEANER_IMPORT_ERROR = _e
 
+st.set_page_config(
+    page_title="Limpieza de Datos",
+    page_icon="🧠",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+from components.ui_helpers import setup_branding
+
+setup_branding(
+    page_title="Limpieza de Datos",
+    page_subtitle="Transformación, imputación y codificación con enfoque enterprise",
+    show_logo=True,
+)
+
 st.header("2. Limpieza y Transformación")
 
 if st.session_state.get('clean_data') is not None:

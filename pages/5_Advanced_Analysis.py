@@ -26,6 +26,15 @@ import tensorflow as tf
 from config import Config, DataProcessor, Visualizer, GenericClassifier
 from utils.groq_diagnostic import GroqDiagnostician
 
+st.set_page_config(page_title="Análisis Avanzado", layout="wide", page_icon="🧠", initial_sidebar_state="expanded")
+
+from components.ui_helpers import setup_branding, show_spinner
+
+setup_branding(
+    page_title="Análisis Avanzado",
+    page_subtitle="Exploración visual, ANNs y diagnóstico asistido",
+    show_logo=True,
+)
 
 class StreamlitProgressCallback(tf.keras.callbacks.Callback):
     """Actualiza la barra de progreso de Streamlit al final de cada época."""
@@ -43,12 +52,9 @@ class StreamlitProgressCallback(tf.keras.callbacks.Callback):
 
 def main():
     """Construye la interfaz avanzada de análisis y entrenamiento ANN."""
-
-    # Configuración de la página
-    st.set_page_config(page_title="Análisis Avanzado", layout="wide", page_icon="🧠")
-    
-    from components.ui_helpers import setup_branding, show_spinner
-    setup_branding()
+    # Branding and global styles are applied at module import time to ensure
+    # Streamlit multipage navigation always receives the theme.
+    # `show_spinner` remains available via top-level import.
     
     st.header("Análisis Avanzado - Clasificador ANN")
     st.markdown("""
@@ -354,7 +360,7 @@ def main():
                             if 'report' not in st.session_state:
                                 st.warning("⚠️ Primero entrena el modelo para generar métricas. Haz clic en 'Iniciar Entrenamiento'.")
                             else:
-                                if st.button("📊 Generar Diagnóstico", use_container_width=True):
+                                if st.button("📊 Generar Diagnóstico", use_container_width=True, type="primary"):
                                     with show_spinner("Generando explicabilidad (SHAP)..."):
                                         try:
                                             import shap

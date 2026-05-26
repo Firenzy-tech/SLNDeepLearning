@@ -11,6 +11,21 @@ import seaborn as sns
 from utils.groq_diagnostic import GroqDiagnostician
 from models.ml_engine import run_ml_pipeline
 
+st.set_page_config(
+    page_title="Machine Learning",
+    page_icon="🧠",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+from components.ui_helpers import setup_branding
+
+setup_branding(
+    page_title="Machine Learning",
+    page_subtitle="Entrenamiento, métricas y exportación con estética corporativa",
+    show_logo=True,
+)
+
 st.header("4. Machine Learning Pipeline")
 
 if st.session_state.get('clean_data') is not None:
@@ -19,7 +34,7 @@ if st.session_state.get('clean_data') is not None:
     target = st.selectbox("Selecciona la variable Objetivo (Target)", df.columns)
     tarea = st.radio("Tipo de Tarea", ["Clasificación", "Regresión"])
     
-    if st.button("Entrenar Modelo (Random Forest)"):
+    if st.button("Entrenar Modelo (Random Forest)", type="primary"):
         with st.spinner("Entrenando modelo..."):
             try:
                 model, metrics = run_ml_pipeline(df, target, tarea)
@@ -66,7 +81,7 @@ if st.session_state.get('clean_data') is not None:
             basadas en el rendimiento actual de tu modelo.
             """)
             
-            if st.button("📊 Generar Análisis y Recomendaciones", use_container_width=True):
+            if st.button("📊 Generar Análisis y Recomendaciones", use_container_width=True, type="primary"):
                 with st.spinner("Consultando con la IA de Groq..."):
                     try:
                         metrics = st.session_state['ml_metrics']

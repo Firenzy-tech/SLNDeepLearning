@@ -1,2 +1,10 @@
 [server]
 maxUploadSize = 2048  # MB - aumenta el límite de subida a 2GB
+
+[theme]
+base = "light"
+primaryColor = "#022873"
+backgroundColor = "#F4F7FC"
+secondaryBackgroundColor = "#E4ECF7"
+textColor = "#021F59"
+font = "sans serif"

@@ -362,8 +362,8 @@ hr {
 }
 
 .ui-brand-bar__logo {
-    width: 44px;
-    height: 44px;
+    width: 352px;
+    height: 88px;
     object-fit: contain;
     flex: 0 0 auto;
 }

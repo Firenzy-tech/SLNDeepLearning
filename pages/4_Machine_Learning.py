@@ -1,6 +1,7 @@
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import pickle
 import io
@@ -28,105 +29,138 @@ setup_branding(
 
 st.header("4. Machine Learning Pipeline")
 
-if st.session_state.get('clean_data') is not None:
-    df = st.session_state['clean_data']
-    
+if st.session_state.get("clean_data") is not None:
+    df = st.session_state["clean_data"]
+
     target = st.selectbox("Selecciona la variable Objetivo (Target)", df.columns)
     tarea = st.radio("Tipo de Tarea", ["Clasificación", "Regresión"])
-    
+
     if st.button("Entrenar Modelo (Random Forest)", type="primary"):
         with st.spinner("Entrenando modelo..."):
             try:
                 model, metrics = run_ml_pipeline(df, target, tarea)
-                st.session_state['ml_model'] = model
-                st.session_state['ml_metrics'] = metrics
+                st.session_state["ml_model"] = model
+                st.session_state["ml_metrics"] = metrics
                 st.success("¡Entrenamiento finalizado!")
             except Exception as e:
-                st.error(f"Error en el entrenamiento. Verifica que las características estén limpias y codificadas. Detalles: {e}")
+                st.error(
+                    f"Error en el entrenamiento. Verifica que las características estén limpias y codificadas. Detalles: {e}"
+                )
 
-    if 'ml_model' in st.session_state:
+    if "ml_model" in st.session_state:
         st.subheader("Resultados y Exportación")
-        st.json(st.session_state['ml_metrics'])
+        st.json(st.session_state["ml_metrics"])
 
         # Nueva sección para inspeccionar la estructura interna del archivo PKL
         with st.expander("🔍 Inspección del Modelo (Contenido del PKL)", expanded=False):
-            model = st.session_state['ml_model']
-            
+            model = st.session_state["ml_model"]
+
             st.markdown("### ⚙️ Hiperparámetros del Algoritmo")
             st.write("Esta es la configuración técnica que quedará grabada en el archivo .pkl:")
             st.json(model.get_params())
-            
-            if hasattr(model, 'feature_importances_'):
+
+            if hasattr(model, "feature_importances_"):
                 st.markdown("### 📊 Relevancia de Variables (Feature Importance)")
-                # Intentamos obtener las columnas del modelo si es un Pipeline, 
+                # Intentamos obtener las columnas del modelo si es un Pipeline,
                 # de lo contrario usamos las del dataframe actual excluyendo el target
-                features = getattr(model, 'feature_names_in_', [c for c in df.columns if c != target])
+                features = getattr(
+                    model, "feature_names_in_", [c for c in df.columns if c != target]
+                )
                 importances = model.feature_importances_
-                
+
                 if len(features) == len(importances):
-                    feat_imp = pd.DataFrame({'Variable': features, 'Importancia': importances}).sort_values(by='Importancia', ascending=False)
+                    feat_imp = pd.DataFrame(
+                        {"Variable": features, "Importancia": importances}
+                    ).sort_values(by="Importancia", ascending=False)
                     fig, ax = plt.subplots(figsize=(8, 6))
                     # Usamos una paleta de colores para mejor visualización
-                    sns.barplot(data=feat_imp.head(12), x='Importancia', y='Variable', ax=ax, palette='viridis')
+                    sns.barplot(
+                        data=feat_imp.head(12),
+                        x="Importancia",
+                        y="Variable",
+                        ax=ax,
+                        palette="viridis",
+                    )
                     ax.set_title("Top Variables que influyen en el Modelo")
                     plt.tight_layout()
                     st.pyplot(fig)
                 else:
-                    st.info("⚠️ No se puede graficar la importancia: El modelo tiene dimensiones distintas al dataset original (posiblemente por One-Hot Encoding interno).")
-        
+                    st.info(
+                        "⚠️ No se puede graficar la importancia: El modelo tiene dimensiones distintas al dataset original (posiblemente por One-Hot Encoding interno)."
+                    )
+
         # Nueva sección: Diagnóstico con IA (Groq)
         with st.expander("🤖 Diagnóstico con Inteligencia Artificial (Groq)", expanded=False):
-            st.markdown("""
+            st.markdown(
+                """
             Utiliza IA para generar un análisis objetivo y recomendaciones operativas 
             basadas en el rendimiento actual de tu modelo.
-            """)
-            
-            if st.button("📊 Generar Análisis y Recomendaciones", use_container_width=True, type="primary"):
+            """
+            )
+
+            if st.button(
+                "📊 Generar Análisis y Recomendaciones", use_container_width=True, type="primary"
+            ):
                 with st.spinner("Consultando con la IA de Groq..."):
                     try:
-                        metrics = st.session_state['ml_metrics']
+                        metrics = st.session_state["ml_metrics"]
                         # Adaptamos las métricas al formato esperado por GroqDiagnostician
                         diag_metrics = {
-                            'accuracy': metrics.get('accuracy', 0),
-                            'precision': metrics.get('precision', 0),
-                            'recall': metrics.get('recall', 0),
-                            'f1_score': metrics.get('f1_score', 0)
+                            "accuracy": metrics.get("Report", {}).get("accuracy", 0),
+                            "precision": metrics.get("Report", {})
+                            .get("weighted avg", {})
+                            .get("precision", 0),
+                            "recall": metrics.get("Report", {})
+                            .get("weighted avg", {})
+                            .get("recall", 0),
+                            "f1_score": metrics.get("Report", {})
+                            .get("weighted avg", {})
+                            .get("f1-score", 0),
                         }
-                        
+
                         # Generamos un resumen de importancia de variables para enriquecer el diagnóstico
                         inf_summary = None
-                        if hasattr(model, 'feature_importances_'):
-                            features = getattr(model, 'feature_names_in_', [c for c in df.columns if c != target])
+                        if hasattr(model, "feature_importances_"):
+                            features = getattr(
+                                model, "feature_names_in_", [c for c in df.columns if c != target]
+                            )
                             importances = model.feature_importances_
-                            feat_imp = pd.DataFrame({'Variable': features, 'Importancia': importances}).sort_values(by='Importancia', ascending=False)
+                            feat_imp = pd.DataFrame(
+                                {"Variable": features, "Importancia": importances}
+                            ).sort_values(by="Importancia", ascending=False)
                             top_5 = feat_imp.head(5)
-                            inf_summary = ", ".join([f"{row['Variable']} (impacto: {row['Importancia']:.4f})" for _, row in top_5.iterrows()])
+                            inf_summary = ", ".join(
+                                [
+                                    f"{row['Variable']} (impacto: {row['Importancia']:.4f})"
+                                    for _, row in top_5.iterrows()
+                                ]
+                            )
 
                         diagnostician = GroqDiagnostician()
-                        st.session_state['ml_diagnostic'] = diagnostician.generate_diagnostic(
+                        st.session_state["ml_diagnostic"] = diagnostician.generate_diagnostic(
                             metrics=diag_metrics,
                             model_name=f"Random Forest ({tarea})",
-                            shap_summary=inf_summary
+                            shap_summary=inf_summary,
                         )
                     except ValueError as ve:
                         st.warning(f"⚠️ {ve}")
                     except Exception as e:
                         st.error(f"❌ Error al conectar con Groq: {str(e)}")
 
-            if 'ml_diagnostic' in st.session_state:
+            if "ml_diagnostic" in st.session_state:
                 st.markdown("---")
-                st.info(st.session_state['ml_diagnostic'])
+                st.info(st.session_state["ml_diagnostic"])
 
         # Preparar el modelo para descarga mediante serialización
         model_buffer = io.BytesIO()
-        pickle.dump(st.session_state['ml_model'], model_buffer)
-        
+        pickle.dump(st.session_state["ml_model"], model_buffer)
+
         st.download_button(
             label="📥 Descargar Modelo Random Forest (.pkl)",
             data=model_buffer.getvalue(),
             file_name=f"modelo_rf_{tarea.lower()}.pkl",
             mime="application/octet-stream",
-            use_container_width=True
+            use_container_width=True,
         )
 else:
     st.warning("Por favor, carga un dataset en el paso 1.")

@@ -100,21 +100,6 @@ Todo en una sola interfaz:
 - Entrena redes neuronales con arquitectura personalizable
 - Descarga los modelos entrenados
 
-## Requisitos
-- Archivos CSV con encabezados
-- Variables objetivo con 2 clases (clasificación binaria)
-- Dependencias: `pip install -r requirements.txt`
-
-## Instalación de Dependencias
-```bash
-pip install -r requirements.txt
-```
-
-## Soporte
-Si encuentras errores de importación, asegúrate de:
-1. Tener todas las dependencias instaladas
-2. Estar en la carpeta raíz del proyecto
-3. Ejecutar con: `streamlit run app.py`
 """
 )
 
@@ -136,7 +121,7 @@ sidebar_info_html = """
     </ul>
     <div style="display:flex;gap:8px;margin-top:6px;">
         <a href="#" style="flex:1;text-align:center;padding:8px 10px;border-radius:8px;background:linear-gradient(135deg,var(--ui-accent),#B96403);color:#FFF;text-decoration:none;font-weight:700;">Guía Rápida</a>
-        <a href="#" style="flex:1;text-align:center;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);color:var(--ui-surface-strong);text-decoration:none;font-weight:700;">Soporte</a>
+        <a href="#" style="flex:1;text-align:center;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);color:var(--ui-surface);text-decoration:none;font-weight:700;">Soporte</a>
     </div>
     <div style="margin-top:10px;font-size:12px;color:rgba(245,248,252,0.7);">Última actualización: Mayo 2026</div>
 </div>

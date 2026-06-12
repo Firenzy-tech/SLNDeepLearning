@@ -250,6 +250,37 @@ button[kind="primary"]:hover,
     box-shadow: var(--ui-focus) !important;
 }
 
+[data-testid="stSidebar"] [data-baseweb="select"] > div,
+[data-testid="stSidebar"] [data-baseweb="input"] input {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.16) !important;
+}
+[data-testid="stSidebar"] [data-baseweb="select"] > div * {
+    color: #F5F8FC !important;
+}
+
+/* Main content: light widget boxes + dark text */
+section[data-testid="stMain"] [data-baseweb="select"] > div,
+section[data-testid="stMain"] [data-baseweb="input"] input {
+    background: #FFFFFF !important;
+    border-color: rgba(2, 40, 115, 0.18) !important;
+}
+
+section[data-testid="stMain"] [data-baseweb="select"] > div * {
+    color: var(--ui-text) !important;
+}
+
+/* Multiselect selected chips */
+section[data-testid="stMain"] [data-baseweb="tag"] {
+    background: var(--ui-surface-muted) !important;
+    border-color: rgba(2, 40, 115, 0.12) !important;
+    color: var(--ui-text) !important;
+}
+
+section[data-testid="stMain"] [data-baseweb="tag"] * {
+    color: var(--ui-text) !important;
+}
+
 label {
     color: var(--ui-secondary) !important;
     font-weight: 650 !important;
@@ -302,6 +333,13 @@ label {
 [data-testid="stAlert"] p,
 [data-testid="stAlert"] div,
 [data-testid="stAlert"] span {
+    color: var(--ui-text) !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stAlert"] [data-testid="stMarkdownContainer"] p,
+[data-testid="stSidebar"] [data-testid="stAlert"] [data-testid="stMarkdownContainer"] li,
+[data-testid="stSidebar"] [data-testid="stAlert"] span,
+[data-testid="stSidebar"] [data-testid="stAlert"] div {
     color: var(--ui-text) !important;
 }
 
@@ -431,9 +469,13 @@ def show_spinner(message: str = "Procesando..."):
         placeholder.empty()
 
 
-def setup_branding(page_title: str | None = None, page_subtitle: str | None = None, show_logo: bool = True):
+def setup_branding(
+    page_title: str | None = None, page_subtitle: str | None = None, show_logo: bool = True
+):
     """Aplica el sistema visual corporativo global y, opcionalmente, un banner de marca."""
-    logo_path = os.path.join(os.path.dirname(__file__), "..", "wwwroot", "images", "golondrina_software.svg")
+    logo_path = os.path.join(
+        os.path.dirname(__file__), "..", "wwwroot", "images", "golondrina_software.svg"
+    )
 
     logo_b64 = ""
     if show_logo and os.path.exists(logo_path):
@@ -443,8 +485,14 @@ def setup_branding(page_title: str | None = None, page_subtitle: str | None = No
     st.markdown(_GLOBAL_STYLE, unsafe_allow_html=True)
 
     if show_logo and logo_b64:
-        subtitle_html = f'<p class="ui-brand-bar__subtitle">{page_subtitle}</p>' if page_subtitle else ""
-        title_html = f'<p class="ui-brand-bar__title">{page_title}</p>' if page_title else '<p class="ui-brand-bar__title">Plataforma corporativa de analítica</p>'
+        subtitle_html = (
+            f'<p class="ui-brand-bar__subtitle">{page_subtitle}</p>' if page_subtitle else ""
+        )
+        title_html = (
+            f'<p class="ui-brand-bar__title">{page_title}</p>'
+            if page_title
+            else '<p class="ui-brand-bar__title">Plataforma corporativa de analítica</p>'
+        )
         st.markdown(
             f"""
             <div class="ui-brand-bar">

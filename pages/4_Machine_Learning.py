@@ -10,6 +10,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from utils.groq_diagnostic import GroqDiagnostician
+from utils.feature_meta import compute_feature_meta
 from models.ml_engine import run_ml_pipeline
 
 st.set_page_config(
@@ -39,8 +40,16 @@ if st.session_state.get("clean_data") is not None:
         with st.spinner("Entrenando modelo..."):
             try:
                 model, metrics = run_ml_pipeline(df, target, tarea)
+                feature_names = list(
+                    getattr(model, "feature_names_in_", df.drop(columns=[target]).select_dtypes(include=["number"]).columns)
+                )
+                training_x = df[feature_names]
                 st.session_state["ml_model"] = model
                 st.session_state["ml_metrics"] = metrics
+                st.session_state["ml_task"] = tarea
+                st.session_state["ml_target"] = target
+                st.session_state["ml_feature_names"] = feature_names
+                st.session_state["ml_feature_meta"] = compute_feature_meta(training_x, feature_names)
                 st.success("¡Entrenamiento finalizado!")
             except Exception as e:
                 st.error(
@@ -153,12 +162,19 @@ if st.session_state.get("clean_data") is not None:
 
         # Preparar el modelo para descarga mediante serialización
         model_buffer = io.BytesIO()
-        pickle.dump(st.session_state["ml_model"], model_buffer)
+        bundle = {
+            "kind": "rf",
+            "model": st.session_state["ml_model"],
+            "feature_meta": st.session_state.get("ml_feature_meta", {}),
+            "task": st.session_state.get("ml_task", tarea),
+            "target": st.session_state.get("ml_target", target),
+        }
+        pickle.dump(bundle, model_buffer)
 
         st.download_button(
             label="📥 Descargar Modelo Random Forest (.pkl)",
             data=model_buffer.getvalue(),
-            file_name=f"modelo_rf_{tarea.lower()}.pkl",
+            file_name=f"modelo_rf_{st.session_state.get('ml_task', tarea).lower()}.pkl",
             mime="application/octet-stream",
             use_container_width=True,
         )

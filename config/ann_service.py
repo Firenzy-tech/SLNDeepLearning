@@ -14,6 +14,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import confusion_matrix, classification_report
+from utils.feature_meta import compute_feature_meta
 try:
     import shap
     SHAP_AVAILABLE = True
@@ -171,7 +172,10 @@ class GenericClassifier:
         assets = {
             'scaler': self.scaler,
             'label_encoder': self.label_encoder,
-            'features': self.processed_features # Guardar las features procesadas (incluyendo one-hot encoding)
+            'features': self.processed_features,
+            'feature_columns': self.feature_columns,
+            'feature_meta': compute_feature_meta(self.df, self.feature_columns),
+            'target_column': self.target_column,
         }
         with open(f"{filename}_assets.pkl", 'wb') as f:
             pickle.dump(assets, f)

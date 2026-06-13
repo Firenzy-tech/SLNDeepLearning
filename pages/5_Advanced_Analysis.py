@@ -25,6 +25,7 @@ import plotly.express as px
 import tensorflow as tf
 from config import Config, DataProcessor, Visualizer, GenericClassifier
 from utils.groq_diagnostic import GroqDiagnostician
+from utils.feature_meta import compute_feature_meta
 
 st.set_page_config(page_title="Análisis Avanzado", layout="wide", page_icon="🧠", initial_sidebar_state="expanded")
 
@@ -317,6 +318,11 @@ def main():
                             st.session_state['history'] = clf.train(epochs=epochs, batch_size=batch_size, callbacks=[cb])
                             st.session_state['clf'] = clf
                             st.session_state['cm'], st.session_state['report'], st.session_state['y_preds_test'] = clf.evaluate()
+                            st.session_state['ann_feature_meta'] = compute_feature_meta(
+                                loaded_dataset, selected_features
+                            )
+                            st.session_state['ann_target'] = target_col
+                            st.session_state['ann_features'] = selected_features
                             st.success(" Entrenamiento completado exitosamente.")
                         except Exception as e:
                             st.error(f"❌ Error en entrenamiento: {e}")

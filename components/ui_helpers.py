@@ -207,6 +207,17 @@ button[kind="primary"],
     border-color: rgba(217, 121, 4, 0.32);
 }
 
+/* Form submit buttons (st.form_submit_button) - match the primary button style */
+.stFormSubmitButton button[kind="primaryFormSubmit"],
+[data-testid="stFormSubmitButton"] button {
+    background: linear-gradient(135deg, var(--ui-accent), #B96403) !important;
+    border-color: rgba(217, 121, 4, 0.32) !important;
+}
+.stFormSubmitButton button[kind="primaryFormSubmit"] *,
+[data-testid="stFormSubmitButton"] button * {
+    color: #FFFFFF !important;
+}
+
 .stButton > button[kind="primary"]:hover,
 button[kind="primary"]:hover,
 [data-baseweb="button"] button[kind="primary"]:hover {
